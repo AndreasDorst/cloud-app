@@ -1,0 +1,12 @@
+# General
+*.log
+
+# Rails
+cloud-app/log/*
+cloud-app/tmp/*
+
+# Tmp
+tmp/
+
+# Log
+log/

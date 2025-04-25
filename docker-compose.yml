@@ -1,0 +1,76 @@
+services:
+  app: 
+    build:
+      context: ./cloud-app
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    command: rails s -b 0.0.0.0 
+    volumes:
+      - ./cloud-app:/usr/src
+    ports:
+      - "${RAILS_PORT}:3000"
+    depends_on:
+      - db
+      - calc
+    env_file:
+      - .env
+      - cloud-app/.env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      VM_CALC_URL: http://calc:${VM_CALC_PORT}/calculate
+
+  calc:
+    build:
+      context: ./vm-calc
+    ports:
+      - "${VM_CALC_PORT}:${VM_CALC_PORT}"
+    volumes:
+      - ./vm-calc:/app
+    env_file:
+      - .env
+      - vm-calc/.env
+    environment:
+      RACK_ENV: ${RACK_ENV}
+      PORT: ${VM_CALC_PORT}
+  
+  sidekiq:
+    build:
+      context: ./cloud-app
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    command: sidekiq
+    volumes:
+      - ./cloud-app:/usr/src
+    ports:
+      - "3001:3001"
+    environment:
+      REDIS_URL: redis://redis:/6379/0
+  
+  rabbitmq:
+    image: rabbitmq:management-alpine
+    ports:
+      - 15672:15672
+    volumes:
+      - rabbit:/var/lib/rabbitmq
+
+  redis:
+    image: redis:alpine
+    volumes:
+      - redis:/data
+
+  db:
+    image: postgres:11.5
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT}:5432"
+
+volumes:
+  postgres:
+  redis:
+  rabbit:

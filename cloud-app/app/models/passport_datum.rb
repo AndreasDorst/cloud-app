@@ -1,0 +1,2 @@
+class PassportDatum < ApplicationRecord
+end
